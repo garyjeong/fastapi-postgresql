@@ -16,9 +16,6 @@ class AppEnv(StrEnum):
 
 
 def load_env(env: AppEnv = AppEnv.LOCAL) -> None:
-    """
-    지정된 환경에 맞는 .env 파일을 로드합니다.
-    """
     env_path = f"src/databases/envs/.env.{env}"
     if not os.path.exists(env_path):
         raise FileNotFoundError(f"Environment file not found: {env_path}")
@@ -28,9 +25,6 @@ def load_env(env: AppEnv = AppEnv.LOCAL) -> None:
 
 
 def create_tunnel() -> Optional[SSHTunnelForwarder]:
-    """
-    운영 환경인 경우 SSH 터널을 생성합니다.
-    """
     if os.getenv("ENV") == AppEnv.LOCAL:
         return None
 
@@ -43,7 +37,6 @@ def create_tunnel() -> Optional[SSHTunnelForwarder]:
         "DATABASE_PORT",
     ]
 
-    # 필요한 환경 변수가 모두 있는지 확인
     missing_vars = [var for var in required_env_vars if not os.getenv(var)]
     if missing_vars:
         raise ValueError(
@@ -62,19 +55,13 @@ def create_tunnel() -> Optional[SSHTunnelForwarder]:
 
 
 def get_database_url(tunnel: Optional[SSHTunnelForwarder] = None) -> URL:
-    """
-    환경에 맞는 데이터베이스 URL을 생성합니다.
-    """
     required_env_vars = ["DATABASE_USER", "DATABASE_PASSWORD", "DATABASE_NAME"]
-
-    # 필요한 환경 변수가 모두 있는지 확인
     missing_vars = [var for var in required_env_vars if not os.getenv(var)]
     if missing_vars:
         raise ValueError(
             f"Missing required environment variables: {', '.join(missing_vars)}"
         )
 
-    # 터널이 있으면 localhost와 터널 포트 사용
     if tunnel:
         host = "localhost"
         port = tunnel.local_bind_port
@@ -93,17 +80,15 @@ def get_database_url(tunnel: Optional[SSHTunnelForwarder] = None) -> URL:
 
 
 def create_engine_with_tunnel(env: AppEnv = AppEnv.LOCAL) -> Engine:
-    """
-    지정된 환경에 맞는 데이터베이스 엔진을 생성합니다.
-    """
-    # 환경 변수 로드
     load_env(env)
 
-    # SSH 터널 생성 (필요한 경우)
     tunnel = create_tunnel()
     if tunnel:
         tunnel.start()
 
-    # 데이터베이스 URL 생성 및 엔진 반환
     url = get_database_url(tunnel)
-    return create_engine(url)
+    return create_engine(
+        url,
+        echo=True,
+        pool_pre_ping=True,
+    )

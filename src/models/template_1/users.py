@@ -1,8 +1,8 @@
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from configs.database import Base
-from models.base import TimestampMixin
+from src.configs.database import Base
+from src.models.base import TimestampMixin
 
 
 class Users(TimestampMixin, Base):

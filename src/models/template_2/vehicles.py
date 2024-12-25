@@ -1,9 +1,9 @@
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from configs.database import Base
-from models.base import TimestampMixin
-from models.template_1.users import Users
+from src.configs.database import Base
+from src.models.base import TimestampMixin
+from src.models.template_1.users import Users
 
 
 class Vehicles(TimestampMixin, Base):

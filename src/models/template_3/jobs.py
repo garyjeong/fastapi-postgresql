@@ -1,13 +1,16 @@
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from configs.database import Base
-from models.base import TimestampMixin
-from models.template_1.users import Users
-from models.template_2.vehicles import Vehicles
+from src.configs.database import Base
+from src.models.base import TimestampMixin
+from src.models.template_1.users import Users
+from src.models.template_2.vehicles import Vehicles
 
 
 class Jobs(TimestampMixin, Base):
+    __tablename__ = "jobs"
+    __table_args__ = {"schema": "template_3"}
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     vehicle_id: Mapped[int] = mapped_column(

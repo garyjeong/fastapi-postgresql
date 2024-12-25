@@ -1,4 +1,3 @@
-import importlib
 import os
 import re
 import sys
@@ -7,26 +6,16 @@ from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+import sqlalchemy as sa
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from src.configs.database import AppEnv, Base, create_engine_with_tunnel
 from src.models.base import *
+from src.models.template_1.users import Users
+from src.models.template_2.vehicles import Vehicles
+from src.models.template_3.jobs import Jobs
 
-
-def import_models():
-    models_path = Path(__file__).parent.parent.parent / "src" / "models"
-
-    for path in models_path.rglob("*.py"):
-        if path.name == "base.py" or path.name.startswith("_"):
-            continue
-
-        relative_path = path.relative_to(Path(__file__).parent.parent)
-        module_path = str(relative_path).replace(os.path.sep, ".")[:-3]
-        importlib.import_module(module_path)
-
-
-import_models()
 
 env = os.getenv("ENV", AppEnv.LOCAL)
 config = context.config
@@ -41,39 +30,15 @@ def get_url(env: AppEnv = AppEnv.LOCAL):
     return create_engine_with_tunnel(env=env).url
 
 
-def get_next_version():
-    versions_dir = Path(__file__).parent / "versions"
-    if not versions_dir.exists():
-        versions_dir.mkdir(exist_ok=True)
-        return "1.0"
-
-    version_files = [
-        f.name for f in versions_dir.glob("v*.py") if f.name != "__init__.py"
-    ]
-
-    if not version_files:
-        return "1.0"
-
-    version_numbers = []
-    for filename in version_files:
-        match = re.match(r"v(\d{8})_.*\.py", filename)
-        if match:
-            version_numbers.append(match.group(1))
-
-    if not version_numbers:
-        return "1.0"
-
-    return str(float(max(version_numbers)) + 0.1)
-
-
 def run_migrations_offline() -> None:
     url = get_url(env=env)
-    print(f"FUCK Offline : {url}")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_schemas=True,
+        compare_type=True,
     )
 
     with context.begin_transaction():
@@ -83,16 +48,26 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     configuration = config.get_section(name=config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url(env=env)
-    print(f"FUCK Online : {configuration['sqlalchemy.url']}")
+
     connectable = engine_from_config(
-        configuration=configuration,
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
+        connection.execute(sa.text("CREATE SCHEMA IF NOT EXISTS template_1"))
+        connection.execute(sa.text("CREATE SCHEMA IF NOT EXISTS template_2"))
+        connection.execute(sa.text("CREATE SCHEMA IF NOT EXISTS template_3"))
+        connection.commit()
+
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            include_schemas=True,
+            compare_type=True,
+            version_table_schema="public",
+            include_object=lambda obj, name, type_, reflected, compare_to: True,
         )
 
         with context.begin_transaction():
