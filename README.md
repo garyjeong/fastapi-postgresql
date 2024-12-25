@@ -18,6 +18,6 @@ alembic init migrations
 ---
 ## alembic 버전 생성 명령어
 ```bash
-alembic revision --autogenerate -m "{migration message}"
-alembic upgrade head
+ENV={local|production} alembic revision --rev-id "{revision id}" --autogenerate -m "{migration message}"
+ENV={local|production} alembic upgrade head
 ```
