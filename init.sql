@@ -4,6 +4,8 @@ GRANT ALL PRIVILEGES ON DATABASE test TO test_user;
 
 \c test;
 
+GRANT ALL ON SCHEMA public TO test_user;
+
 CREATE SCHEMA template_1;
 GRANT ALL PRIVILEGES ON SCHEMA template_1 TO test_user;
 
